@@ -1,4 +1,4 @@
-defmodule LensesTest do
+defmodule GqlOperationTest do
   use ExUnit.Case
 
   test "project the shit" do
