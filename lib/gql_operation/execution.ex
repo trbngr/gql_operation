@@ -21,7 +21,7 @@ defmodule GqlOperation.Execution do
 
   def atom_keys(map) do
     Enum.into(map, %{}, fn
-      {key, value} when is_map(value) -> {String.to_atom(key), atom_keys(value)}
+      {key, value} when is_map(value) or is_list(value) -> {String.to_atom(key), atom_keys(value)}
       {key, value} -> {String.to_atom(key), value}
     end)
   end
