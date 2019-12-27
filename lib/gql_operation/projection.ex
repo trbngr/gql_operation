@@ -37,6 +37,7 @@ defmodule GqlOperation.Projection do
     projection =
       case Focus.view(lens, data) do
         {:error, _} -> acc
+        nil -> acc
         view -> Map.put(acc, key, resolver.(view))
       end
 
