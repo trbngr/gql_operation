@@ -43,6 +43,8 @@ defmodule GqlOperation.Projection do
     run_projections(tail, data, projection)
   end
 
+  defp compose_lenses([]), do: Lens.make_lens(:___not_found___)
+
   defp compose_lenses([head | tail]) do
     Enum.reduce(tail, Lens.make_lens(head), &Focus.compose(&2, Lens.make_lens(&1)))
   end
