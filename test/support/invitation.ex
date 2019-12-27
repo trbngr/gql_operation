@@ -1,7 +1,27 @@
 defmodule Invitation do
-  @query_string "some query or mutation"
-
-  use GqlOperation, query_string: @query_string
+  use GqlOperation,
+    query_string: """
+    query data($user_id: ID!, $enrollment_id: ID!, $client_id: ID!, $from_contractor_id: ID!){
+      user(id: $user_id){
+        numericId
+        firstName
+        lastName
+        email
+        phones(type: MOBILE){
+          number
+        }
+      }
+      enrollment(id: $enrollment_id){
+        client{
+          name
+        }
+      }
+      master: contractor(clientId: $client_id, id: $from_contractor_id){
+        firstName
+        lastName
+      }
+    }
+    """
 
   project :client_name, from: [:enrollment, :client, :name]
   project :sender_name, from: [:enrollment, :client, :name]
