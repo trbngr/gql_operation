@@ -19,13 +19,7 @@ defmodule GqlOperation do
 
       @spec execute(map() | keyword(), keyword()) :: map()
 
-      def execute(variables \\ %{}, opts \\ [])
-
-      def execute(variables, opts) when is_list(variables) do
-        execute(Enum.into(variables, %{}), opts)
-      end
-
-      def execute(variables, opts) when is_map(variables) do
+      def execute(variables \\ %{}, opts \\ []) when is_map(variables) do
         data = Execution.execute(@query_string, variables, opts)
 
         case @projections do

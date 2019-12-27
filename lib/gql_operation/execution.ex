@@ -1,7 +1,13 @@
 defmodule GqlOperation.Execution do
   require Logger
 
-  def execute(query_string, variables, opts \\ []) when is_map(variables) do
+  def execute(query_string, variables \\ %{}, opts \\ [])
+
+  def execute(query_string, variables, opts) when is_list(variables) do
+    execute(query_string, Enum.into(variables, %{}), opts)
+  end
+
+  def execute(query_string, variables, opts) when is_map(variables) do
     executioner =
       Application.get_env(
         :gql_operation,
