@@ -1,15 +1,14 @@
 defmodule GqlOperation do
   defmacro __using__(opts) do
     query_string = Keyword.get(opts, :query_string) || raise "query_string is a required option"
-    result = Keyword.get(opts, :result) || raise "need a source until this macro is done"
 
-    quote bind_quoted: [mod: __MODULE__, result: result, query_string: query_string] do
+    quote bind_quoted: [mod: __MODULE__, query_string: query_string] do
       import GqlOperation.Projection, only: [project: 1, project: 2]
 
       Module.register_attribute(__MODULE__, :projections, accumulate: true)
 
       @before_compile mod
-      @result result
+      @query_string query_string
     end
   end
 
@@ -27,18 +26,18 @@ defmodule GqlOperation do
       end
 
       def execute(variables, opts) when is_map(variables) do
-        data =
-          @result
-          |> Jason.decode!()
-          |> Execution.atom_keys()
-          |> Map.get(:data, %{})
+        data = Execution.execute(@query_string, variables, opts)
 
         case @projections do
           [] ->
             data
 
           projections ->
-            projection = Projection.run_projections(data, Enum.reverse(projections))
+            projection =
+              projections
+              |> Enum.reverse()
+              |> Projection.run_projections(data)
+
             Map.put(data, :projection, projection)
         end
       end

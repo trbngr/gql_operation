@@ -26,7 +26,9 @@ defmodule Lenses.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:focus, "~> 0.3"}
+      {:focus, "~> 0.3"},
+      {:neuron, "~> 4.1"},
+      {:mox, "~> 0.5.1", only: :test}
     ]
   end
 end
