@@ -38,7 +38,8 @@ defmodule Invitation do
     end
 
   project :sender_name,
-    from: :master,
+    from: [:master],
+    discard_when_nil: true,
     resolve: fn
       %{firstName: first_name, lastName: last_name} -> "#{first_name} #{last_name}"
       _ -> nil

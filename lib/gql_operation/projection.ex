@@ -3,23 +3,37 @@ defmodule GqlOperation.Projection do
   alias GqlOperation.Projection
 
   defmacro project(key) when is_atom(key) do
-    raise ArgumentError, message: "Project #{key}. Missing the from option"
+    raise ArgumentError, message: "Projection: #{key}. Missing the from option"
   end
 
   defmacro project(key, opts) when is_atom(key) and is_list(opts) do
     lenses = Keyword.get(opts, :from, [])
     projection_definition = {key, lenses}
 
-    quote location: :keep, generated: true do
+    quote generated: true do
       @projections unquote(projection_definition)
       def run_projection(unquote(projection_definition), data, projection) do
         lens = Projection.create_lens(unquote(opts))
         resolver = Projection.get_resolver(unquote(opts))
+        discard_when_nil = Keyword.get(unquote(opts), :discard_when_nil, false)
 
         case Focus.view(lens, data) do
-          {:error, _} -> projection
-          nil -> projection
-          view -> Map.put(projection, unquote(key), resolver.(view))
+          {:error, _} ->
+            projection
+
+          nil ->
+            projection
+
+          view ->
+            case resolver.(view) do
+              nil ->
+                unless discard_when_nil,
+                  do: Map.put(projection, unquote(key), nil),
+                  else: projection
+
+              value ->
+                Map.put(projection, unquote(key), value)
+            end
         end
       end
     end
