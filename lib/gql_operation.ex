@@ -30,11 +30,13 @@ defmodule GqlOperation do
             projection =
               projections
               |> Enum.reverse()
-              |> Projection.run_projections(data)
+              |> Enum.reduce(%{}, &run_projection(&1, data, &2))
 
             Map.put(data, :projection, projection)
         end
       end
+
+      def run_projection(_, _data, acc), do: acc
     end
   end
 end

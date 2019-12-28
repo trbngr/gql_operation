@@ -29,13 +29,18 @@ defmodule Invitation do
   project :email, from: [:user, :email]
   project :contractor_first_name, from: [:user, :firstName]
   project :contractor_last_name, from: [:user, :lastName]
-  project :mobile_phone, from: [:user, :phones], resolve: :mobile_phone
-  project :sender_name, from: :master, resolve: :sender_name
 
-  def sender_name(%{firstName: first_name, lastName: last_name}) do
-    "#{first_name} #{last_name}"
-  end
+  project :mobile_phone,
+    from: [:user, :phones],
+    resolve: fn
+      [%{number: number} | _] -> number
+      _ -> nil
+    end
 
-  def mobile_phone([%{number: number} | _]), do: number
-  def mobile_phone(_), do: nil
+  project :sender_name,
+    from: :master,
+    resolve: fn
+      %{firstName: first_name, lastName: last_name} -> "#{first_name} #{last_name}"
+      _ -> nil
+    end
 end

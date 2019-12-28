@@ -1,52 +1,56 @@
 defmodule GqlOperation.Projection do
+  require Logger
+  alias GqlOperation.Projection
+
   defmacro project(key) when is_atom(key) do
     raise ArgumentError, message: "Project #{key}. Missing the from option"
   end
 
-  defmacro project(key, opts) when is_atom(key) do
-    quote bind_quoted: [opts: opts, key: key] do
-      lenses = Keyword.get(opts, :from, [])
-      resolve = Keyword.get(opts, :resolve)
+  defmacro project(key, opts) when is_atom(key) and is_list(opts) do
+    lenses = Keyword.get(opts, :from, [])
+    projection_definition = {key, lenses}
 
-      resolve =
-        case resolve do
-          fun when is_atom(fun) -> {__MODULE__, fun}
-          resolver -> resolver
+    quote location: :keep, generated: true do
+      @projections unquote(projection_definition)
+      def run_projection(unquote(projection_definition), data, projection) do
+        lens = Projection.create_lens(unquote(opts))
+        resolver = Projection.get_resolver(unquote(opts))
+
+        case Focus.view(lens, data) do
+          {:error, _} -> projection
+          nil -> projection
+          view -> Map.put(projection, unquote(key), resolver.(view))
         end
-
-      @projections {key, [lenses: List.wrap(lenses), resolve: resolve]}
+      end
     end
   end
 
-  def run_projections(projections, data, acc \\ %{})
-
-  def run_projections([], _data, acc), do: acc
-
-  def run_projections([{key, opts} | tail], data, acc) do
-    lens =
-      opts
-      |> Keyword.get(:lenses, [])
-      |> compose_lenses()
-
-    resolver =
-      case Keyword.get(opts, :resolve) do
-        {mod, fun} when not is_nil(fun) -> fn x -> apply(mod, fun, [x]) end
-        _ -> fn x -> x end
-      end
-
-    projection =
-      case Focus.view(lens, data) do
-        {:error, _} -> acc
-        nil -> acc
-        view -> Map.put(acc, key, resolver.(view))
-      end
-
-    run_projections(tail, data, projection)
+  def create_lens(opts) do
+    opts
+    |> Keyword.get(:from, [])
+    |> List.wrap()
+    |> compose_lenses()
   end
 
-  defp compose_lenses([]), do: Lens.make_lens(:___not_found___)
+  def get_resolver(opts) do
+    id = fn x -> x end
 
-  defp compose_lenses([head | tail]) do
+    case Keyword.get(opts, :resolve) do
+      nil ->
+        id
+
+      fun when is_function(fun, 1) ->
+        fun
+
+      _ ->
+        Logger.warn("resolve is expected to be a function of 1 arity")
+        id
+    end
+  end
+
+  def compose_lenses([]), do: Lens.make_lens(:___not_found___)
+
+  def compose_lenses([head | tail]) do
     Enum.reduce(tail, Lens.make_lens(head), &Focus.compose(&2, Lens.make_lens(&1)))
   end
 end
