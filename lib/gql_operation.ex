@@ -2,41 +2,20 @@ defmodule GqlOperation do
   defmacro __using__(opts) do
     query_string = Keyword.get(opts, :query_string) || raise "query_string is a required option"
 
-    quote bind_quoted: [mod: __MODULE__, query_string: query_string] do
-      import GqlOperation.Projection, only: [project: 1, project: 2]
-
-      Module.register_attribute(__MODULE__, :projections, accumulate: true)
-
-      @before_compile mod
-      @query_string query_string
-    end
-  end
-
-  defmacro __before_compile__(_env) do
-    quote generated: true do
+    quote do
+      use DataProjection
       alias GqlOperation.Execution
-      alias GqlOperation.Projection
 
+      @spec execute() :: map()
+      @spec execute(map() | keyword()) :: map()
       @spec execute(map() | keyword(), keyword()) :: map()
 
       def execute(variables \\ %{}, opts \\ []) when is_map(variables) do
-        data = Execution.execute(@query_string, variables, opts)
-
-        case @projections do
-          [] ->
-            data
-
-          projections ->
-            projection =
-              projections
-              |> Enum.reverse()
-              |> Enum.reduce(%{}, &run_projection(&1, data, &2))
-
-            Map.put(data, :projection, projection)
-        end
+        data =
+          unquote(query_string)
+          |> Execution.execute(variables, opts)
+          |> run_projection()
       end
-
-      def run_projection(_, _data, acc), do: acc
     end
   end
 end

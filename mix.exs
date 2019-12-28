@@ -25,9 +25,9 @@ defmodule Lenses.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jason, "~> 1.1"},
       {:focus, "~> 0.3"},
       {:neuron, "~> 4.1"},
+      {:jason, "~> 1.1", only: :test},
       {:mox, "~> 0.5.1", only: :test}
     ]
   end

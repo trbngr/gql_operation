@@ -31,7 +31,9 @@ defmodule GqlOperationTest do
 
   test "project the shit" do
     GqlOperation.MockExecutioner
-    |> expect(:execute, fn _, _, _ -> Jason.decode!(@mock_result) end)
+    |> expect(:execute, fn _, _, _ ->
+      @mock_result |> Jason.decode!() |> DataProjection.atom_keys()
+    end)
 
     expected = %{
       client_name: "United Contracting Company",

@@ -1,20 +1,48 @@
-defmodule GqlOperation.Projection do
+defmodule DataProjection do
   require Logger
-  alias GqlOperation.Projection
+
+  defmacro __using__(_opts) do
+    quote do
+      @before_compile DataProjection
+      import DataProjection, only: [project: 1, project: 2]
+      Module.register_attribute(__MODULE__, :projections, accumulate: true)
+    end
+  end
+
+  defmacro __before_compile__(_env) do
+    quote generated: true do
+      def run_projection(data) when is_map(data) do
+        case @projections do
+          [] ->
+            data
+
+          projections ->
+            projection =
+              projections
+              |> Enum.reverse()
+              |> Enum.reduce(%{}, &__run_projection__(&1, data, &2))
+
+            Map.put(data, :projection, projection)
+        end
+      end
+
+      def __run_projection__(_, _data, acc), do: acc
+    end
+  end
 
   defmacro project(key) when is_atom(key) do
-    raise ArgumentError, message: "Projection: #{key}. Missing the from option"
+    raise ArgumentError, message: "DataProjection: #{key}. Missing the from option"
   end
 
   defmacro project(key, opts) when is_atom(key) and is_list(opts) do
     lenses = Keyword.get(opts, :from, [])
     projection_definition = {key, lenses}
 
-    quote generated: true do
+    quote do
       @projections unquote(projection_definition)
-      def run_projection(unquote(projection_definition), data, projection) do
-        lens = Projection.create_lens(unquote(opts))
-        resolver = Projection.get_resolver(unquote(opts))
+      def __run_projection__(unquote(projection_definition), data, projection) do
+        lens = DataProjection.create_lens(unquote(opts))
+        resolver = DataProjection.get_resolver(unquote(opts))
         discard_when_nil = Keyword.get(unquote(opts), :discard_when_nil, false)
 
         case Focus.view(lens, data) do
@@ -67,4 +95,17 @@ defmodule GqlOperation.Projection do
   def compose_lenses([head | tail]) do
     Enum.reduce(tail, Lens.make_lens(head), &Focus.compose(&2, Lens.make_lens(&1)))
   end
+
+  def atom_keys(list) when is_list(list) do
+    Enum.map(list, &atom_keys/1)
+  end
+
+  def atom_keys(map) when is_map(map) do
+    Enum.into(map, %{}, fn
+      {key, value} when is_map(value) or is_list(value) -> {String.to_atom(key), atom_keys(value)}
+      {key, value} -> {String.to_atom(key), value}
+    end)
+  end
+
+  def atom_keys(item), do: item
 end
