@@ -41,14 +41,11 @@ defmodule DataProjection do
     quote do
       @projections unquote(projection_definition)
       def __run_projection__(unquote(projection_definition), data, projection) do
-        lens = DataProjection.create_lens(unquote(opts))
+        accessor = DataProjection.create_accessor(unquote(opts))
         resolver = DataProjection.get_resolver(unquote(opts))
         discard_when_nil = Keyword.get(unquote(opts), :discard_when_nil, false)
 
-        case Focus.view(lens, data) do
-          {:error, _} ->
-            projection
-
+        case get_in(data, accessor) do
           nil ->
             projection
 
@@ -67,11 +64,11 @@ defmodule DataProjection do
     end
   end
 
-  def create_lens(opts) do
+  def create_accessor(opts) do
     opts
     |> Keyword.get(:from, [])
     |> List.wrap()
-    |> compose_lenses()
+    |> Enum.map(&Access.key/1)
   end
 
   def get_resolver(opts) do
@@ -88,12 +85,6 @@ defmodule DataProjection do
         Logger.warn("resolve is expected to be a function of 1 arity")
         id
     end
-  end
-
-  def compose_lenses([]), do: Lens.make_lens(:___not_found___)
-
-  def compose_lenses([head | tail]) do
-    Enum.reduce(tail, Lens.make_lens(head), &Focus.compose(&2, Lens.make_lens(&1)))
   end
 
   def atom_keys(list) when is_list(list) do
