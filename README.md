@@ -1,3 +1,2 @@
 # GqlOperations
-
-Halp! I can't capture functions in a macro.
+Just seeing how this can play out.
