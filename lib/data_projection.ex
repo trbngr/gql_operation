@@ -41,11 +41,11 @@ defmodule DataProjection do
     quote do
       @projections unquote(projection_definition)
       def __run_projection__(unquote(projection_definition), data, projection) do
-        accessor = DataProjection.create_accessor(unquote(opts))
+        keys = DataProjection.create_access_keys(unquote(opts))
         resolver = DataProjection.get_resolver(unquote(opts))
         discard_when_nil = Keyword.get(unquote(opts), :discard_when_nil, false)
 
-        case get_in(data, accessor) do
+        case get_in(data, keys) do
           nil ->
             projection
 
@@ -64,7 +64,7 @@ defmodule DataProjection do
     end
   end
 
-  def create_accessor(opts) do
+  def create_access_keys(opts) do
     opts
     |> Keyword.get(:from, [])
     |> List.wrap()
