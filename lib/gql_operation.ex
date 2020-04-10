@@ -9,8 +9,6 @@ defmodule GqlOperation do
         false -> Keyword.get(opts, :discard_response, false)
       end
 
-    %{is_list_response: is_list_response, discard_response: discard_response} |> IO.inspect()
-
     quote generated: true, location: :keep do
       use DataProjection
       alias GqlOperation.Execution
