@@ -47,7 +47,9 @@ defmodule DataProjection do
 
         case get_in(data, keys) do
           nil ->
-            projection
+            unless discard_when_nil,
+              do: Map.put(projection, unquote(key), nil),
+              else: projection
 
           view ->
             case resolver.(view) do
