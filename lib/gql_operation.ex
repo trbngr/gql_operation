@@ -13,9 +13,9 @@ defmodule GqlOperation do
       use DataProjection
       alias GqlOperation.Execution
 
-      @spec execute() :: map()
-      @spec execute(map() | keyword()) :: map()
-      @spec execute(map() | keyword(), keyword()) :: map()
+      @spec execute() :: map() | [map()]
+      @spec execute(map() | keyword()) :: map() | [map()]
+      @spec execute(map() | keyword(), keyword()) :: map() | [map()]
 
       def execute(variables \\ %{}, opts \\ []) when is_map(variables) do
         response = Execution.execute(unquote(query_string), variables, opts)
