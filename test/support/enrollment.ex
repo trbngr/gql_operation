@@ -1,5 +1,6 @@
 defmodule Enrollment do
   use GqlOperation,
+    discard_response: false,
     query_string: """
       query data($enrollment_id: ID!){
         enrollment(id: $enrollment_id){
